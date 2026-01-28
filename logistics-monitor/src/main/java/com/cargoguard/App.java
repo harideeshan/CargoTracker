@@ -3,17 +3,19 @@ package com.cargoguard;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.HashMap;
 import java.util.Map;
 
 @SpringBootApplication
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*") // Allows your React frontend to connect
+@CrossOrigin(origins = "*") 
 public class App {
 
-    private DatabaseService db = new DatabaseService();
-    private GuardianService guardian = new GuardianService(db);
+    @Autowired
+    private GuardianService guardian;
+
     private CargoPackage amazonBox = new CargoPackage("AMZ-667-BLR", 11.0168, 76.9558);
 
     public static void main(String[] args) {
@@ -22,8 +24,8 @@ public class App {
 
     @PostMapping("/update-location")
     public Map<String, Object> updateLocation(@RequestBody Map<String, Double> location) {
-        double truckLat = location.get("lat");
-        double truckLon = location.get("lon");
+        double truckLat = location.getOrDefault("lat", 0.0);
+        double truckLon = location.getOrDefault("lon", 0.0);
 
         guardian.monitorSecurity(amazonBox, truckLat, truckLon);
 
@@ -32,7 +34,12 @@ public class App {
         response.put("packageId", amazonBox.getTrackingId());
         response.put("isDropped", amazonBox.isDropped());
         
+        // CORRECTION: Send full alert data in the REST response as a fallback
         if (amazonBox.isDropped()) {
+            response.put("type", "DROPPED");
+            response.put("pkgId", amazonBox.getTrackingId());
+            response.put("lat", amazonBox.getLat());
+            response.put("lon", amazonBox.getLon());
             response.put("recoveryLink", "https://www.google.com/maps?q=" + amazonBox.getLat() + "," + amazonBox.getLon());
         }
 

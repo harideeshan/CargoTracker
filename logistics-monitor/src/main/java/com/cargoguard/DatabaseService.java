@@ -1,7 +1,9 @@
 package com.cargoguard;
 
 import java.sql.*;
+import org.springframework.stereotype.Service;
 
+@org.springframework.stereotype.Service
 public class DatabaseService {
     private String url = "jdbc:h2:./cargoguard_db;AUTO_SERVER=TRUE";
     private String user = "sa";
